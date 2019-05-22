@@ -5429,8 +5429,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var testModeRibbonTarget = $(template.render({
 	      ribbonText: 'Test Mode',
 	    }));
-	
-	    rootTarget.append(testModeRibbonTarget);
+	    
+	    //rootTarget.append(testModeRibbonTarget);
 	
 	  };
 	
@@ -5539,6 +5539,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var clickTimeslot = function(eventData) {
 	
 	    if (!getConfig().disable_confirm_page) {
+	      submitBookingFormModified(eventData);
 	      showBookingPage(eventData)
 	    } else {
 	      $('.fc-event-clicked').removeClass('fc-event-clicked');
@@ -5726,13 +5727,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	    var dateFormat = getConfig().ui.booking_date_format || moment.localeData().longDateFormat('LL');
 	    var timeFormat = getConfig().ui.booking_time_format || moment.localeData().longDateFormat('LT');
-	    var allocatedResource = eventData.resources ? eventData.resources[0].name : false;
+	    // var allocatedResource = eventData.resources ? eventData.resources[0].name : false; 
 	
 	    bookingPageTarget = $(template.render({
 	      chosenDate:               formatTimestamp(eventData.start, dateFormat),
 	      chosenTime:               formatTimestamp(eventData.start, timeFormat) + ' - ' + formatTimestamp(eventData.end, timeFormat),
-	      allocatedResourcePrefix:  getConfig().ui.localization.allocated_resource_prefix,
-	      allocatedResource:        allocatedResource,
+	      // allocatedResourcePrefix:  getConfig().ui.localization.allocated_resource_prefix,
+	      // allocatedResource:        allocatedResource,
+	      allocatedResource:        'Your call has been scheduled',
 	      closeIcon:                __webpack_require__(80),
 	      checkmarkIcon:            __webpack_require__(81),
 	      loadingIcon:              __webpack_require__(72),
@@ -5741,8 +5743,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      successMessage:           interpolate.sprintf(getConfig().ui.localization.success_message, '<span class="booked-email"></span>')
 	    }));
 	
-	    var formFields = bookingPageTarget.find('.bookingjs-form-fields');
-	    $(formFields).append(renderCustomerFields());
+	    // var formFields = bookingPageTarget.find('.bookingjs-form-fields');
+	    // $(formFields).append(renderCustomerFields());
 	    
 	    var form = bookingPageTarget.children('.bookingjs-form');
 	
@@ -5764,7 +5766,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    });
 	
 	    form.submit(function(e) {
-	      submitBookingForm(this, e, eventData);
+	      // submitBookingForm(this, e, eventData);
+	      e.preventDefault();
+	      var bookingHasBeenCreated = $(form).hasClass('success');
+	      if (bookingHasBeenCreated) getAvailability();
+	      hideBookingPage();
 	    });
 	
 	    $(rootTarget).on('customer-timezone-changed', function () {
@@ -5852,6 +5858,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	  };
 	
+	  var submitBookingFormOutgrow = function(eventData) {
+	    var formData = {};
+	    $.each(getConfig().customer_fields, function(key) {
+	      formData[key] = getConfig().customer_fields[key]["prefilled"];
+	    })
+	    timekitCreateBooking(formData, eventData).then(function(response){
+	      console.log('Successfully booked');
+	    }).catch(function(response){
+	      // showBookingFailed(formElement)
+	      console.log('Booking failed', response);
+	    });
+	
+	  };
+	
 	  var showBookingFailed = function (formElement) {
 	
 	    var submitButton = formElement.find('.bookingjs-form-button');
@@ -5869,7 +5889,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	  // Create new booking
 	  var timekitCreateBooking = function(formData, eventData) {
-	
+	    
 	    var nativeFields = ['name', 'email', 'location', 'comment', 'phone', 'voip']
 	
 	    var args = {
@@ -5892,20 +5912,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	      });
 	    }
 	
-	    args.description += (getConfig().customer_fields.name.title || 'Name') + ': ' + formData.name + '\n';
-	    args.description += (getConfig().customer_fields.name.email || 'Email') + ': ' + formData.email + '\n';
+	    args.description += (getConfig().customer_fields.name.title || 'Name') + ': ' + (getConfig().customer_fields.name.prefilled || formData.name || 'Error getting name') + '\n';
+	    args.description += (getConfig().customer_fields.name.email || 'Email') + ': ' + (getConfig().customer_fields.email.prefilled || formData.email || 'Error getting email') + '\n';
 	
 	    if (getConfig().customer_fields.location) {
-	      args.customer.where = formData.location;
-	      args.where = formData.location;
+	      args.customer.where = getConfig().customer_fields.location.prefilled || formData.location;
+	      args.where = getConfig().customer_fields.location.prefilled || formData.location;
 	    }
 	    if (getConfig().customer_fields.comment) {
-	      args.customer.comment = formData.comment;
+	      args.customer.comment = getConfig().customer_fields.comment.prefilled ||  formData.comment;
 	      args.description += (getConfig().customer_fields.comment.title || 'Comment') + ': ' + formData.comment + '\n';
 	    }
 	    if (getConfig().customer_fields.phone) {
 	      args.customer.phone = formData.phone;
-	      args.description += (getConfig().customer_fields.phone.title || 'Phone') + ': ' + formData.phone + '\n';
+	      args.description += (getConfig().customer_fields.phone.title || 'Phone') + ': ' + (getConfig().customer_fields.phone.prefilled || formData.phone || 'Error getting phone number') + '\n';
 	    }
 	    if (getConfig().customer_fields.voip) {
 	      args.customer.voip = formData.voip;
@@ -5917,7 +5937,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if ($.inArray(key, nativeFields) >= 0) return
 	      if (field.format === 'checkbox') formData[key] = !!formData[key]
 	      args.customer[key] = formData[key]
-	      args.description += (getConfig().customer_fields[key].title || key) + ': ' + formData[key] + '\n';
+	      args.description += (getConfig().customer_fields[key].title || key) + ': ' + (getConfig().customer_fields[key][prefilled] || formData[key]) + '\n';
 	    })
 	
 	    if (getConfig().booking.graph === 'group_customer' || getConfig().booking.graph === 'group_customer_payment') {

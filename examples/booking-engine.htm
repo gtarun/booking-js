@@ -15,16 +15,27 @@
   <script type="text/javascript">
     var widget = new TimekitBooking();
     widget.init({
-      app_key: 'live_widget_key_yYXHsUurvCUctNYflzGDMqEJo6mol0Yo',
-      resources: [
-        '42b956f0-be11-4af3-9221-19e899fcd1fb'
-      ],
-      booking: {
-        graph: 'confirm_decline',
-      },
+      // app_key: 'live_widget_key_yYXHsUurvCUctNYflzGDMqEJo6mol0Yo',
+      app_key: 'test_widget_key_WRx9L2tjteZiHhD7bUPQgSyFI0i3FDD5',
+      project_id: 'ebf3bd5f-8e43-4994-ac1e-7da0c3e21862',
+      // resources: [
+      //   '42b956f0-be11-4af3-9221-19e899fcd1fb'
+      // ],
+      // booking: {
+      //   graph: 'confirm_decline',
+      // },
       customer_fields: {
+        name: {
+          title: 'Name',
+          prefilled: 'Madhur Jajoo'
+        },
+        email: {
+          title: 'Email',
+          prefilled: 'madhur.jajoo@venturepact.com'
+        },
         phone: {
-          title: 'Phone number'
+          title: 'Phone number',
+          prefilled: '+91999999999'
         }
       },
       ui: {
